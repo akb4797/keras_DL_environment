@@ -3,18 +3,20 @@ import keras
 from keras.optimizers import SGD, Adam
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.utils import to_categorical
+import pandas
 
 #from MODEL_ARCHITECTURE.vgg import return_VGG_ARCH
-from MODEL_ARCHITECTURE.sensor_engine import sensorActivityRecEngine
-
+from MODEL_ARCHITECTURE.sensor_engine import sensorActivityRecEngine_CNN, sensorActivityRecEngine_Logistic
+from MODULES.numpy_converter import process 
 
 # Design model
 img_channels = 1
 nb_classes = 3
 # input image dimensions
-img_rows, img_cols = 6, 2000
+feature_rows, feature_cols = 9, 98
 
-model = sensorActivityRecEngine_CNN(rows=img_rows, cols=img_cols, depth=img_channels, mClasses=nb_classes)
+model = sensorActivityRecEngine_Logistic(feature_rows, feature_cols)
 #sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
 opt = Adam(lr=0.0001)
 
@@ -25,9 +27,16 @@ checkpoint = ModelCheckpoint("sensorNet.h5", monitor='acc', verbose=1, save_best
 early = EarlyStopping(monitor='acc', min_delta=0, patience=20, verbose=1, mode='auto')
 
 #Training process
-train_dataset_size = 187400
 
-BATCH_SIZE = 32
+TRAIN_FILE_NAME="train_MEMS.csv"
+
+(X_featureData, Y_lblData) = process(TRAIN_FILE_NAME)
+Y_lblData = to_categorical(Y_lblData)
+
+print ('xlabel : ' + str(X_featureData.shape))
+print ('ylabel : ' + str(Y_lblData.shape))
+
+hist = model.fit( X_featureData, Y_lblData, epochs=30, batch_size=2, verbose=1, callbacks=[checkpoint,early] )
 
 '''
 train_datagen = ImageDataGenerator(

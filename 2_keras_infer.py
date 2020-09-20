@@ -14,40 +14,54 @@ from keras.preprocessing.image import image, ImageDataGenerator
 from keras.regularizers import l2
 
 from sklearn.metrics.pairwise import cosine_similarity
-
-from MODEL_ARCHITECTURE.vgg import return_VGG_ARCH, return_VGG_ARCH_FE
-
-BATCH_SIZE = 32
-
-img_height = 224
-img_width = img_height
-
-DATA_FOLDER = ''
-
-classLabelsFile = open('classLbl.txt','r')
-tempList = classLabelsFile.readlines()
-stateList = []
-for elem in tempList:
-    stateList.append(elem.strip())
-
-print ("Supported classes : " +  str(stateList))
+from keras.utils import to_categorical
 
 
-def get_classifierOutput(refPath):
+from MODULES.numpy_converter import process 
+
+from MODEL_ARCHITECTURE.sensor_engine import sensorActivityRecEngine_Logistic
+
+feature_rows, feature_cols = 9, 98
+
+try:
+    classLabelsFile = open('classLbl.txt','r')
+    tempList = classLabelsFile.readlines()
+    stateList = []
+    for elem in tempList:
+        stateList.append(elem.strip())
+    print ("Supported classes : " +  str(stateList))
+
+except:
+    print ('Error reading class files..')
+
+
+
+def get_classifierOutput():
 
     input_images = [] # Store resized versions of the images here.
 
-    saved_model = return_VGG_ARCH( returnLayer='softmax')
-    saved_model.load_weights( 'vgg16_0.h5')
+    saved_model = sensorActivityRecEngine_Logistic(feature_rows, feature_cols)
+    saved_model.load_weights( 'sensorNet.h5')
     #print ("\nLoading with Weights : vgg16_1.h5")
 
-    refimg = image.load_img(refPath, target_size=(img_height, img_width))
-    img = image.img_to_array(refimg) 
-    input_images.append(img)
-    input_images = np.array(input_images)
+    TEST_FILE_NAME="test_MEMS.csv"
+
+    (X_featureData, Y_lblData) = process(TEST_FILE_NAME)
+    Y_lblData = to_categorical(Y_lblData)
+
+    print ('xlabel : ' + str(X_featureData.shape))
+    print ('GT labels : ' + str(Y_lblData))
 
 
-    output = saved_model.predict([input_images])
+
+    # refimg = image.load_img(refPath, target_size=(img_height, img_width))
+    # img = image.img_to_array(refimg) 
+    # input_images.append(img)
+    # input_images = np.array(input_images)
+
+
+    output = saved_model.predict([X_featureData])
+    print ('Pred labels : ' + str(output))
     return output
     
 
@@ -101,34 +115,11 @@ def get_siamese_model(m_inpWidth, m_inpHeight, m_channels):
 
 def main():
 
-    test_path = os.path.join(DATA_FOLDER, 'IN_t3', '1.png')
-
-    outputClass = get_classifierOutput(test_path)
+    outputClass = get_classifierOutput()
     print ("\tClass : " + str(outputClass))
+    #print ("\tProbable State : " + str(stateList[int( outputClass.argmax(axis=-1))]))
 
-    print ("\tProbable State : " + str(stateList[int( outputClass.argmax(axis=-1))]))
-
-    '''
-    for subFldr in os.listdir(DATA_FOLDER):
-        print ('\nState : ' + subFldr)
-        
-        ref_path = os.path.join(DATA_FOLDER, 'FL_t1', '1.png')
-        
-        for img in os.listdir(os.path.join(DATA_FOLDER, subFldr)):
-            if(1):
-                query_path = os.path.join(DATA_FOLDER, subFldr, img)
-                # print ("\tRef img : " + ref_path)
-                # print ("\tQuery img : " + query_path )
-                
-                outputClass = get_classifierOutput(query_path)
-                outputSimilarity, fe_simCosine = get_imageSimilarity(ref_path, query_path)
-
-                if(fe_simCosine >= 0.99):
-                    print("\tMatching reference design")
-                    print ("\tProbable State : " + str(stateList[int( outputClass.argmax(axis=-1))]))
-                    print("\tSimilarity Output : " + str(fe_simCosine))
-
-    '''
+ 
 if __name__ == "__main__":
     main()
     
