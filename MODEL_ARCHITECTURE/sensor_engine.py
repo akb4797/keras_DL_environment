@@ -33,6 +33,6 @@ def sensorActivityRecEngine_Logistic(NUM_ROWS,NUM_COLS):
    model.add(Dense(256, activation='relu'))
    model.add(Dropout(0.25))
    model.add(Flatten())
-   model.add(Dense(2, activation='softmax'))
+   model.add(Dense(8, activation='softmax'))
    model.summary()
    return model
