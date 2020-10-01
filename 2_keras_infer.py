@@ -56,8 +56,10 @@ class sensorEngine_inference_class():
 
 
 
+
+
 def main():
-    
+
     test_file = "test_2.csv"
     workout_ID = ['0','1','2','3','4','5','6','7']
 
@@ -70,6 +72,8 @@ def main():
         for elem in outputClass:
             print ("GroundTruth WorkOutID: " + str(gtLabels[ctr][0])+ " \t -> \t Predicted WorkOutID : " + str(workout_ID[int( elem.argmax(axis=-1))] + ' \t Confidence ' + str(max(elem))))
             ctr += 1
+
+
     
 if __name__ == "__main__":
     main()
